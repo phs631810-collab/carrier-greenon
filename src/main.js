@@ -47,10 +47,10 @@ let currentUser = null;
 
 app.innerHTML = `
   <canvas class="wind-cursor-canvas" id="wind-cursor-canvas" aria-hidden="true"></canvas>
-  <aside class="floating-mascot" aria-label="Carrier GreenON 마스코트 그리니">
+  <button class="floating-mascot" id="open-support" type="button" aria-label="그리니 고객센터 열기">
     <span class="mascot-message">안녕! 나는 그리니야</span>
     <img src="/images/greenon-mascot.png" alt="새싹이 돋아난 파란 물방울 모양의 GreenON 마스코트 그리니" />
-  </aside>
+  </button>
   <div class="app-shell">
     <header class="topbar">
       <nav class="desktop-nav desktop-nav-left" aria-label="주요 메뉴">
@@ -294,6 +294,28 @@ app.innerHTML = `
       <p class="auth-notice" id="auth-notice">Supabase가 로그인 정보를 안전하게 관리합니다.</p>
     </dialog>
 
+    <dialog class="support-dialog" id="support-dialog" aria-labelledby="support-title">
+      <button class="dialog-close" id="support-close" type="button" aria-label="고객센터 닫기">×</button>
+      <div class="support-heading">
+        <img src="/images/greenon-mascot.png" alt="GreenON 마스코트 그리니" />
+        <div><p class="eyebrow">GREENON SUPPORT</p><h2 id="support-title">그리니 고객센터</h2><span><i></i> 상담 가능</span></div>
+      </div>
+      <div class="support-chat" id="support-chat" role="log" aria-live="polite">
+        <p class="chat-message bot">안녕하세요! 무엇을 도와드릴까요? 아래 질문을 선택하거나 직접 입력해 주세요.</p>
+      </div>
+      <div class="support-quick-actions" aria-label="빠른 질문">
+        <button type="button" data-support-question="에어컨 상태">에어컨 상태</button>
+        <button type="button" data-support-question="미션 참여">미션 참여</button>
+        <button type="button" data-support-question="포인트 사용">포인트 사용</button>
+      </div>
+      <form class="support-form" id="support-form">
+        <label class="sr-only" for="support-input">상담 질문</label>
+        <input id="support-input" type="text" maxlength="100" placeholder="궁금한 내용을 입력하세요" required />
+        <button type="submit">보내기</button>
+      </form>
+      <a class="support-phone" href="tel:12345678"><span>전화 상담</span><strong>1234-5678</strong></a>
+    </dialog>
+
     <nav class="bottom-nav" aria-label="주요 메뉴">
       <a class="nav-item active" href="#home" data-page="home" aria-current="page"><span aria-hidden="true">⌂</span>홈</a>
       <a class="nav-item" href="#mission" data-page="mission"><span aria-hidden="true">✓</span>미션</a>
@@ -384,6 +406,54 @@ function initializeWindCursor() {
 }
 
 initializeWindCursor();
+
+// 그리니는 자주 묻는 질문을 안내하고 필요하면 고객센터 전화 연결을 제공합니다.
+function getSupportAnswer(question) {
+  const normalizedQuestion = question.replace(/\s/g, "");
+  if (normalizedQuestion.includes("에어컨") || normalizedQuestion.includes("상태") || normalizedQuestion.includes("센서")) {
+    return "홈 화면의 ‘에어컨 상태’에서 전원, 온도, 필터와 센서 상태를 확인할 수 있어요.";
+  }
+  if (normalizedQuestion.includes("미션")) {
+    return "미션 메뉴에서 오늘의 미션에 참여한 뒤 조건을 유지하며 시간을 진행해 주세요.";
+  }
+  if (normalizedQuestion.includes("포인트") || normalizedQuestion.includes("지갑")) {
+    return "미션 성공 포인트는 지갑에 자동 적립되며 리워드샵에서 사용할 수 있어요.";
+  }
+  if (normalizedQuestion.includes("리워드") || normalizedQuestion.includes("구매")) {
+    return "리워드샵에서 상품을 선택하면 필요한 포인트와 구매 후 잔액을 확인할 수 있어요.";
+  }
+  if (normalizedQuestion.includes("로그인") || normalizedQuestion.includes("가입")) {
+    return "MY 메뉴에서 로그인하거나 회원가입할 수 있어요. 이미 가입했다면 로그인 탭을 이용해 주세요.";
+  }
+  return "이 질문은 전화 상담이 더 정확해요. 고객센터 1234-5678로 문의해 주세요.";
+}
+
+function addSupportMessage(message, sender) {
+  const chat = document.querySelector("#support-chat");
+  const bubble = document.createElement("p");
+  bubble.className = `chat-message ${sender}`;
+  bubble.textContent = message;
+  chat.append(bubble);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function askSupport(question) {
+  if (!question.trim()) return;
+  addSupportMessage(question.trim(), "user");
+  window.setTimeout(() => addSupportMessage(getSupportAnswer(question), "bot"), 250);
+}
+
+document.querySelector("#open-support").addEventListener("click", () => document.querySelector("#support-dialog").showModal());
+document.querySelector("#support-close").addEventListener("click", () => document.querySelector("#support-dialog").close());
+document.querySelectorAll("[data-support-question]").forEach((button) => {
+  button.addEventListener("click", () => askSupport(button.dataset.supportQuestion));
+});
+document.querySelector("#support-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const input = document.querySelector("#support-input");
+  askSupport(input.value);
+  input.value = "";
+});
 
 // 모든 메뉴는 스크롤 위치가 아닌 각각의 독립 화면으로 전환합니다.
 const pageNames = ["home", "mission", "wallet", "shop", "my"];
