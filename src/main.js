@@ -46,6 +46,7 @@ let selectedRewardId = null;
 let currentUser = null;
 
 app.innerHTML = `
+  <canvas class="wind-cursor-canvas" id="wind-cursor-canvas" aria-hidden="true"></canvas>
   <div class="app-shell">
     <header class="topbar">
       <nav class="desktop-nav desktop-nav-left" aria-label="주요 메뉴">
@@ -298,6 +299,87 @@ app.innerHTML = `
     </nav>
   </div>
 `;
+
+// 데스크톱 마우스 뒤에 짧게 남는 푸른 냉기 입자를 그립니다.
+// 투명 캔버스는 클릭을 받지 않으므로 아래의 버튼과 링크 동작을 방해하지 않습니다.
+function initializeWindCursor() {
+  const canvas = document.querySelector("#wind-cursor-canvas");
+  const context = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const finePointer = window.matchMedia("(pointer: fine)");
+  const particles = [];
+  let animationFrame = null;
+  let previousPoint = null;
+
+  function resizeCanvas() {
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(window.innerWidth * pixelRatio);
+    canvas.height = Math.round(window.innerHeight * pixelRatio);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  }
+
+  function drawWind() {
+    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (let index = particles.length - 1; index >= 0; index -= 1) {
+      const particle = particles[index];
+      particle.life -= 0.035;
+      particle.x += particle.velocityX;
+      particle.y += particle.velocityY + Math.sin(particle.phase) * 0.22;
+      particle.phase += 0.18;
+
+      if (particle.life <= 0) {
+        particles.splice(index, 1);
+        continue;
+      }
+
+      context.beginPath();
+      context.moveTo(particle.x, particle.y);
+      context.quadraticCurveTo(
+        particle.x - particle.length * 0.5,
+        particle.y + Math.sin(particle.phase) * 5,
+        particle.x - particle.length,
+        particle.y,
+      );
+      context.strokeStyle = `rgba(38, 145, 255, ${particle.life * 0.62})`;
+      context.lineWidth = particle.width;
+      context.lineCap = "round";
+      context.stroke();
+    }
+
+    animationFrame = particles.length ? requestAnimationFrame(drawWind) : null;
+  }
+
+  window.addEventListener("pointermove", (event) => {
+    if (!finePointer.matches || reduceMotion.matches) return;
+    const distance = previousPoint ? Math.hypot(event.clientX - previousPoint.x, event.clientY - previousPoint.y) : 20;
+    previousPoint = { x: event.clientX, y: event.clientY };
+    if (distance < 3) return;
+
+    // 한 번에 적은 수의 입자만 만들어 부드러운 바람 결을 표현합니다.
+    for (let index = 0; index < Math.min(3, Math.ceil(distance / 12)); index += 1) {
+      particles.push({
+        x: event.clientX + (Math.random() - 0.5) * 10,
+        y: event.clientY + (Math.random() - 0.5) * 12,
+        velocityX: -0.35 - Math.random() * 0.45,
+        velocityY: (Math.random() - 0.5) * 0.3,
+        length: 16 + Math.random() * 24,
+        width: 1 + Math.random() * 1.4,
+        life: 0.65 + Math.random() * 0.35,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    if (particles.length > 90) particles.splice(0, particles.length - 90);
+    if (!animationFrame) animationFrame = requestAnimationFrame(drawWind);
+  }, { passive: true });
+
+  window.addEventListener("resize", resizeCanvas, { passive: true });
+  document.documentElement.addEventListener("mouseleave", () => { previousPoint = null; });
+  resizeCanvas();
+}
+
+initializeWindCursor();
 
 // 모든 메뉴는 스크롤 위치가 아닌 각각의 독립 화면으로 전환합니다.
 const pageNames = ["home", "mission", "wallet", "shop", "my"];
