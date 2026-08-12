@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+!.env.example
+# 개인 IDE 작업 요청 원문은 애플리케이션 배포에 포함하지 않습니다.
+\# 에어컨 리워드 웹앱 프롬프트.txt
