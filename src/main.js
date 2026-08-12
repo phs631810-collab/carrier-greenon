@@ -595,6 +595,29 @@ document.querySelectorAll(".auth-tab").forEach((tab) => {
   });
 });
 
+// Supabase의 기술적인 영문 오류를 사용자가 바로 이해할 수 있는 안내로 바꿉니다.
+function getAuthErrorMessage(authError, isSignup) {
+  const code = authError?.code || "";
+  const message = authError?.message?.toLowerCase() || "";
+
+  if (code === "user_already_exists" || message.includes("already registered")) {
+    return "이미 가입된 이메일이에요. 로그인 화면으로 전환했습니다.";
+  }
+  if (code === "invalid_credentials" || message.includes("invalid login credentials")) {
+    return "이메일 또는 비밀번호가 올바르지 않아요.";
+  }
+  if (code === "email_not_confirmed" || message.includes("email not confirmed")) {
+    return "이메일 인증이 아직 완료되지 않았어요. 받은 메일을 확인해 주세요.";
+  }
+  if (code === "weak_password" || message.includes("password")) {
+    return isSignup ? "더 안전한 비밀번호를 입력해 주세요." : "비밀번호를 다시 확인해 주세요.";
+  }
+  if (code.includes("rate_limit") || message.includes("rate limit")) {
+    return "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.";
+  }
+  return "인증 처리 중 문제가 발생했어요. 잠시 후 다시 시도해 주세요.";
+}
+
 // 비밀번호는 Supabase Auth로 직접 전달하며 앱의 저장소에는 기록하지 않습니다.
 document.querySelector("#auth-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -631,7 +654,11 @@ document.querySelector("#auth-form").addEventListener("submit", async (event) =>
   submitButton.textContent = isSignup ? "회원가입하고 시작하기" : "로그인";
 
   if (result.error) {
-    error.textContent = result.error.message;
+    const isAlreadyRegistered = result.error.code === "user_already_exists"
+      || result.error.message.toLowerCase().includes("already registered");
+    // 이미 가입된 주소라면 다시 입력하게 하지 않고 곧바로 로그인 탭으로 안내합니다.
+    if (isSignup && isAlreadyRegistered) document.querySelector('[data-auth-mode="login"]').click();
+    error.textContent = getAuthErrorMessage(result.error, isSignup);
     error.hidden = false;
     return;
   }
