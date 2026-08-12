@@ -47,6 +47,10 @@ let currentUser = null;
 
 app.innerHTML = `
   <canvas class="wind-cursor-canvas" id="wind-cursor-canvas" aria-hidden="true"></canvas>
+  <aside class="floating-mascot" aria-label="Carrier GreenON 마스코트 그리니">
+    <span class="mascot-message">안녕! 나는 그리니야</span>
+    <img src="/images/greenon-mascot.png" alt="새싹이 돋아난 파란 물방울 모양의 GreenON 마스코트 그리니" />
+  </aside>
   <div class="app-shell">
     <header class="topbar">
       <nav class="desktop-nav desktop-nav-left" aria-label="주요 메뉴">
