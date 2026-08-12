@@ -605,7 +605,15 @@ document.querySelector("#auth-form").addEventListener("submit", async (event) =>
   error.hidden = true;
 
   const result = isSignup
-    ? await supabase.auth.signUp({ email, password, options: { data: { display_name: name } } })
+    ? await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: name },
+          // 이메일 인증을 마치면 현재 실행 중인 로컬 또는 배포 사이트로 돌아옵니다.
+          emailRedirectTo: window.location.origin,
+        },
+      })
     : await supabase.auth.signInWithPassword({ email, password });
 
   submitButton.disabled = false;
