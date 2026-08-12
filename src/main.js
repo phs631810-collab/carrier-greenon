@@ -48,26 +48,34 @@ let currentUser = null;
 app.innerHTML = `
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="#home" aria-label="Carrier GreenON 홈">
+      <nav class="desktop-nav desktop-nav-left" aria-label="주요 메뉴">
+        <a class="nav-item header-nav-link active" href="#home" data-page="home">홈</a>
+        <a class="nav-item header-nav-link" href="#mission" data-page="mission">미션</a>
+        <a class="nav-item header-nav-link" href="#wallet" data-page="wallet">지갑</a>
+      </nav>
+      <a class="brand nav-item" href="#home" data-page="home" aria-label="Carrier GreenON 홈">
         <span class="brand-mark" aria-hidden="true">G</span>
         <span>Carrier <strong>GreenON</strong></span>
       </a>
-      <button class="profile-button" id="profile-button" type="button" aria-label="내 정보 보기">ON</button>
+      <nav class="desktop-nav desktop-nav-right" aria-label="사용자 메뉴">
+        <a class="nav-item header-nav-link" href="#shop" data-page="shop">리워드샵</a>
+        <a class="nav-item header-nav-link" href="#my" data-page="my">GREEN REPORT</a>
+        <button class="profile-button" id="profile-button" type="button" aria-label="내 정보 보기">ON</button>
+      </nav>
     </header>
 
     <main class="page app-page" id="home-page">
       <section class="welcome" aria-labelledby="welcome-title">
-        <div>
-          <p class="eyebrow">GOOD AFTERNOON</p>
-          <h1 id="welcome-title">오늘도 시원하고<br /><span>지구에 가볍게!</span></h1>
-          <p class="welcome-copy">작은 냉방 습관으로 에너지를 아끼고<br />GREEN POINT도 모아보세요.</p>
+        <div class="welcome-content">
+          <p class="eyebrow">SMART COOLING, GREENER LIVING</p>
+          <h1 id="welcome-title">공기의 기준을 바꾸다<br /><span>Carrier GreenON</span></h1>
+          <p class="welcome-copy">당신의 시원함이 지구의 내일이 되도록.<br />스마트 냉방 미션으로 더 나은 일상을 시작하세요.</p>
+          <div class="hero-actions">
+            <a class="hero-button hero-button-light nav-item" href="#mission" data-page="mission">오늘의 미션</a>
+            <a class="hero-button hero-button-dark nav-item" href="#shop" data-page="shop">리워드 보기</a>
+          </div>
         </div>
-        <div class="eco-illustration" aria-hidden="true">
-          <span class="cloud cloud-one"></span>
-          <span class="cloud cloud-two"></span>
-          <span class="leaf">♧</span>
-          <span class="aircon">Carrier <i></i></span>
-        </div>
+        <div class="hero-pagination" aria-hidden="true"><i class="active"></i><i></i><i></i><i></i><i></i></div>
       </section>
 
       <section class="summary-grid" aria-label="오늘의 요약">
@@ -130,6 +138,14 @@ app.innerHTML = `
         </details>
       </section>
 
+    </main>
+
+    <main class="mission-page app-page" id="mission-page" hidden>
+      <section class="page-intro" aria-labelledby="mission-page-title">
+        <p class="eyebrow">GREEN MISSION</p>
+        <h1 id="mission-page-title">오늘의 냉방 미션</h1>
+        <p>가상 에어컨 상태를 확인하고 친환경 냉방에 도전해 보세요.</p>
+      </section>
       <section class="mission-preview" aria-labelledby="mission-title">
         <div class="section-title-row">
           <div><p class="eyebrow">TODAY'S GREEN MISSION</p><h2 id="mission-title">오늘의 친환경 미션</h2></div>
@@ -275,7 +291,7 @@ app.innerHTML = `
 
     <nav class="bottom-nav" aria-label="주요 메뉴">
       <a class="nav-item active" href="#home" data-page="home" aria-current="page"><span aria-hidden="true">⌂</span>홈</a>
-      <a class="nav-item" href="#mission"><span aria-hidden="true">✓</span>미션</a>
+      <a class="nav-item" href="#mission" data-page="mission"><span aria-hidden="true">✓</span>미션</a>
       <a class="nav-item" href="#wallet" data-page="wallet"><span aria-hidden="true">◇</span>지갑</a>
       <a class="nav-item" href="#shop" data-page="shop"><span aria-hidden="true">♧</span>리워드</a>
       <a class="nav-item" href="#my" data-page="my"><span aria-hidden="true">○</span>MY</a>
@@ -283,40 +299,35 @@ app.innerHTML = `
   </div>
 `;
 
-// 구현된 홈과 지갑 화면 사이를 이동합니다.
+// 모든 메뉴는 스크롤 위치가 아닌 각각의 독립 화면으로 전환합니다.
+const pageNames = ["home", "mission", "wallet", "shop", "my"];
+
+function showPage(targetPage, updateHistory = true) {
+  const safePage = pageNames.includes(targetPage) ? targetPage : "home";
+  document.querySelectorAll(".app-page").forEach((page) => { page.hidden = page.id !== `${safePage}-page`; });
+  document.querySelectorAll(".nav-item").forEach((navItem) => {
+    const isActive = navItem.dataset.page === safePage;
+    navItem.classList.toggle("active", isActive);
+    if (isActive) navItem.setAttribute("aria-current", "page");
+    else navItem.removeAttribute("aria-current");
+  });
+  if (safePage === "wallet") renderWallet();
+  if (safePage === "shop") renderShop();
+  if (safePage === "my") renderMyPage();
+  if (updateHistory && window.location.hash !== `#${safePage}`) window.history.pushState(null, "", `#${safePage}`);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 document.querySelectorAll(".nav-item[data-page]").forEach((item) => {
   item.addEventListener("click", (event) => {
     event.preventDefault();
-    const targetPage = item.dataset.page;
-    document.querySelectorAll(".app-page").forEach((page) => { page.hidden = page.id !== `${targetPage}-page`; });
-    document.querySelectorAll(".nav-item").forEach((navItem) => {
-      const isActive = navItem === item;
-      navItem.classList.toggle("active", isActive);
-      if (isActive) navItem.setAttribute("aria-current", "page");
-      else navItem.removeAttribute("aria-current");
-    });
-    if (targetPage === "wallet") renderWallet();
-    if (targetPage === "shop") renderShop();
-    if (targetPage === "my") renderMyPage();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    showPage(item.dataset.page);
   });
 });
 
-// 아직 구현되지 않은 메뉴는 홈의 안내 문구로 개발 순서를 알려줍니다.
-document.querySelectorAll(".nav-item:not([data-page])").forEach((item) => {
-  item.addEventListener("click", (event) => {
-    event.preventDefault();
-    document.querySelector("#home-page").hidden = false;
-    document.querySelector("#wallet-page").hidden = true;
-    document.querySelectorAll(".nav-item").forEach((navItem) => {
-      navItem.classList.toggle("active", navItem.dataset.page === "home");
-      if (navItem.dataset.page === "home") navItem.setAttribute("aria-current", "page");
-      else navItem.removeAttribute("aria-current");
-    });
-    document.querySelector("#phase-message").textContent = `${item.textContent.trim()} 기능은 다음 개발 단계에서 순서대로 추가됩니다.`;
-    document.querySelector(".mission-preview").scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-});
+// 브라우저의 뒤로/앞으로 가기와 주소 해시 직접 접근도 같은 화면 전환 규칙을 사용합니다.
+window.addEventListener("popstate", () => showPage(window.location.hash.slice(1), false));
+if (window.location.hash) showPage(window.location.hash.slice(1), false);
 
 // 거래 시각을 한국어 날짜와 시간으로 표시합니다.
 function formatTransactionDate(value) {
