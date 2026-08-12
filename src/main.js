@@ -420,7 +420,37 @@ initializeWindCursor();
 
 // 그리니는 자주 묻는 질문을 안내하고 필요하면 고객센터 전화 연결을 제공합니다.
 function getSupportAnswer(question) {
-  const normalizedQuestion = question.replace(/\s/g, "");
+  const normalizedQuestion = question.toLowerCase().replace(/[\s!?.,~]/g, "");
+  const pickAnswer = (answers) => answers[Math.floor(Math.random() * answers.length)];
+
+  // 짧은 일상 대화를 먼저 이해해 상담 외 질문에도 친근하게 반응합니다.
+  if (["안녕", "안녕하세요", "하이", "hello", "hi"].some((word) => normalizedQuestion.includes(word))) {
+    return pickAnswer(["안녕하세요! 그리니예요. 오늘도 시원하고 기분 좋은 하루 보내고 있나요?", "반가워요! 냉방 미션이나 일상 이야기를 편하게 들려주세요."]);
+  }
+  if (normalizedQuestion.includes("이름") || normalizedQuestion.includes("누구") || normalizedQuestion.includes("소개")) {
+    return "저는 Carrier GreenON의 마스코트 ‘그리니’예요. 친환경 냉방 습관과 리워드 이용을 도와드려요!";
+  }
+  if (normalizedQuestion.includes("고마") || normalizedQuestion.includes("감사") || normalizedQuestion.includes("땡큐") || normalizedQuestion.includes("thanks")) {
+    return pickAnswer(["도움이 되었다니 기뻐요! 언제든 다시 불러주세요.", "제가 더 고마워요! 오늘도 지구에 가벼운 냉방 함께해요."]);
+  }
+  if (normalizedQuestion.includes("잘가") || normalizedQuestion.includes("다음에") || normalizedQuestion.includes("바이")) {
+    return "다음에 또 만나요! 그리니는 언제나 여기에서 기다릴게요.";
+  }
+  if (normalizedQuestion.includes("기분") || normalizedQuestion.includes("어때")) {
+    return "저는 아주 상쾌해요! 시원한 바람과 초록 습관을 떠올리면 기분이 좋아지거든요. 오늘 기분은 어때요?";
+  }
+  if (normalizedQuestion.includes("좋아") || normalizedQuestion.includes("행복") || normalizedQuestion.includes("신나")) {
+    return "저도 덩달아 기분이 좋아요! 좋은 기분으로 오늘의 GREEN MISSION에도 도전해 볼까요?";
+  }
+  if (normalizedQuestion.includes("힘들") || normalizedQuestion.includes("슬퍼") || normalizedQuestion.includes("피곤")) {
+    return "오늘 조금 힘들었군요. 잠시 쉬면서 시원한 물 한 잔 마셔보세요. 그리니가 곁에서 응원할게요.";
+  }
+  if (normalizedQuestion.includes("날씨")) {
+    return `현재 홈 화면에서 ${weatherState.location}의 날씨와 친환경 냉방 팁을 확인할 수 있어요.`;
+  }
+  if (normalizedQuestion.includes("뭐해") || normalizedQuestion.includes("도와")) {
+    return "저는 에어컨 상태, GREEN MISSION, 포인트, 리워드를 안내할 수 있고 가벼운 일상 대화도 할 수 있어요.";
+  }
   if (normalizedQuestion.includes("에어컨") || normalizedQuestion.includes("상태") || normalizedQuestion.includes("센서")) {
     return "홈 화면의 ‘에어컨 상태’에서 전원, 온도, 필터와 센서 상태를 확인할 수 있어요.";
   }
@@ -436,7 +466,11 @@ function getSupportAnswer(question) {
   if (normalizedQuestion.includes("로그인") || normalizedQuestion.includes("가입")) {
     return "MY 메뉴에서 로그인하거나 회원가입할 수 있어요. 이미 가입했다면 로그인 탭을 이용해 주세요.";
   }
-  return "이 질문은 전화 상담이 더 정확해요. 고객센터 1234-5678로 문의해 주세요.";
+  return pickAnswer([
+    "조금 더 쉽게 말해주시면 그리니가 다시 생각해 볼게요. 에어컨, 미션, 포인트 이야기도 물어보세요!",
+    "아직 그 이야기는 배우는 중이에요. 다른 표현으로 한 번 더 알려주시겠어요?",
+    "흥미로운 이야기네요! 자세한 고객 상담이 필요하면 1234-5678로 문의할 수도 있어요.",
+  ]);
 }
 
 function addSupportMessage(message, sender) {
