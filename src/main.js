@@ -42,6 +42,16 @@ let weatherState = { ...sampleWeather };
 
 let selectedRewardId = null;
 
+// 리워드 카탈로그 순서에 맞춰 워터마크 없는 상품 이미지를 연결합니다.
+const rewardImages = [
+  "/images/reward-01-iced-coffee.png",
+  "/images/reward-02-salad.png",
+  "/images/reward-03-eco-bag.png",
+  "/images/reward-04-tumblers.png",
+  "/images/reward-05-filter-service.png",
+  "/images/reward-06-cleaning-service.png",
+];
+
 // 실제 로그인 세션은 Supabase SDK가 안전하게 관리합니다.
 let currentUser = null;
 
@@ -265,7 +275,7 @@ app.innerHTML = `
 
     <dialog class="reward-dialog" id="reward-dialog" aria-labelledby="reward-dialog-title">
       <button class="dialog-close" id="dialog-close" type="button" aria-label="상품 상세 닫기">×</button>
-      <div class="dialog-product-icon" id="dialog-product-icon" aria-hidden="true"></div>
+      <div class="dialog-product-icon" id="dialog-product-icon"><img id="dialog-product-image" src="" alt="" /></div>
       <p class="dialog-category" id="dialog-category"></p>
       <h2 id="reward-dialog-title"></h2>
       <p class="dialog-description" id="dialog-description"></p>
@@ -273,6 +283,7 @@ app.innerHTML = `
       <div class="purchase-summary"><span>구매 후 잔액</span><strong id="dialog-after-balance"></strong></div>
       <div class="purchase-warning" id="purchase-warning" role="alert" hidden><strong>포인트가 부족해요</strong><p>GREEN MISSION을 완료하고 포인트를 더 모아주세요.</p></div>
       <button class="purchase-button" id="purchase-button" type="button">포인트로 구매하기</button>
+      <a class="external-shop-button" href="https://www.coupang.com/" target="_blank" rel="noopener noreferrer">쿠팡에서 상품 보기 <span aria-hidden="true">↗</span></a>
     </dialog>
 
     <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
@@ -521,7 +532,7 @@ function renderRewards(category = "ALL") {
   document.querySelector("#reward-grid").innerHTML = visibleRewards.map((reward) => `
     <article class="reward-card">
       <button type="button" data-reward-id="${reward.id}" aria-label="${reward.name} 상세 보기">
-        <span class="reward-image ${reward.color}" aria-hidden="true">${reward.icon}</span>
+        <span class="reward-image ${reward.color}"><img src="${reward.image}" alt="${reward.name}" loading="lazy" /></span>
         <span class="reward-category">${reward.category}</span>
         <strong>${reward.name}</strong>
         <small>${reward.description}</small>
@@ -600,7 +611,10 @@ async function loadCatalogData() {
   if (missionResult.error) console.error("미션 조회 오류:", missionResult.error.message);
   if (rewardResult.error) console.error("리워드 조회 오류:", rewardResult.error.message);
   activeMissionId = missionResult.data?.[0]?.id || null;
-  rewards = rewardResult.data || [];
+  rewards = (rewardResult.data || []).map((reward, index) => ({
+    ...reward,
+    image: rewardImages[index % rewardImages.length],
+  }));
   renderShop();
 }
 
@@ -841,8 +855,9 @@ function openRewardDialog(rewardId) {
   const reward = rewards.find((item) => item.id === rewardId);
   if (!reward) return;
   selectedRewardId = rewardId;
-  document.querySelector("#dialog-product-icon").textContent = reward.icon;
   document.querySelector("#dialog-product-icon").className = `dialog-product-icon ${reward.color}`;
+  document.querySelector("#dialog-product-image").src = reward.image;
+  document.querySelector("#dialog-product-image").alt = reward.name;
   document.querySelector("#dialog-category").textContent = reward.category;
   document.querySelector("#reward-dialog-title").textContent = reward.name;
   document.querySelector("#dialog-description").textContent = reward.description;
